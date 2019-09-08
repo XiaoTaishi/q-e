@@ -910,3 +910,22 @@ xctest.o : ../../Modules/funct.o
 xctest.o : ../../Modules/io_global.o
 xctest.o : ../../Modules/kind.o
 xctest.o : ../../Modules/mp_global.o
+fm_sft.o : ../../Modules/cell_base.o
+fm_sft.o : ../../Modules/constants.o
+fm_sft.o : ../../Modules/environment.o
+fm_sft.o : ../../Modules/fft_base.o
+fm_sft.o : ../../Modules/io_files.o
+fm_sft.o : ../../Modules/io_global.o
+fm_sft.o : ../../Modules/ions_base.o
+fm_sft.o : ../../Modules/mp_images.o
+fm_sft.o : ../../Modules/noncol.o
+fm_sft.o : ../../Modules/parameters.o
+fm_sft.o : ../../Modules/gvecw.o
+fm_sft.o : ../../Modules/run_info.o
+fm_sft.o : ../../FFTXlib/fft_interfaces.o
+fm_sft.o : ../../FFTXlib/scatter_mod.o
+fm_sft.o : ../../PW/src/pwcom.o
+fm_sft.o : ../../PW/src/extfield.o
+fm_sft.o : ../../UtilXlib/mp.o
+fm_sft.o : chdens_module.o
+
