@@ -47,8 +47,8 @@ write_p_avg.o \
 write_proj.o \
 write_io_header.o \
 write_hamiltonians.o \
-fm_sft.o \
 xc_vdW_scale_mod.o   # added by Yang Jiao
+
 
 PWOBJS = ../../PW/src/libpw.a
 QEOBJS = ../../Modules/libqemod.a ../../KS_Solvers/libks_solvers.a \
@@ -63,7 +63,7 @@ all : tldeps open_grid.x average.x bands.x dos.x epsilon.x initial_state.x fs.x 
       plan_avg.x plotband.x plotproj.x plotrho.x pmw.x pp.x projwfc.x \
       pawplot.x sumpdos.x pw2wannier90.x pw2critic.x pw2gw.x \
       wannier_ham.x wannier_plot.x molecularpdos.x \
-      pw2bgw.x wfck2r.x fermi_velocity.x fermi_proj.x ppacf.x  fm_sft.x
+      pw2bgw.x wfck2r.x fermi_velocity.x fermi_proj.x ppacf.x
 
 
 libpp.a : $(PPOBJS) 
@@ -223,12 +223,6 @@ fermi_proj.x : fermi_proj.o libpp.a $(MODULES) $(LIBOBJS)
 ppacf.x : ppacf.o libpp.a $(MODULES) $(LIBOBJS)
 	$(LD) $(LDFLAGS) -o $@ \
 		ppacf.o libpp.a $(MODULES) $(LIBOBJS) $(QELIBS)
-	- ( cd ../../bin ; ln -fs ../PP/src/$@ . )
-
-# Added by Yuxing Fei
-fm_sft.x : fm_sft.o libpp.a $(MODULES) $(LIBOBJS)
-	$(LD) $(LDFLAGS) -o $@ \
-		 fm_sft.o libpp.a $(MODULES) $(LIBOBJS) $(QELIBS)
 	- ( cd ../../bin ; ln -fs ../PP/src/$@ . )
 
 clean :

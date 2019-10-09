@@ -8,7 +8,7 @@
 !
 !-----------------------------------------------------------------------
 SUBROUTINE punch_plot (filplot, plot_num, sample_bias, z, dz, &
-     emin, emax, kpoint, kband, spin_component, lsign)
+     emin, emax, kpoint, kband, spin_component, lsign, electron_temperature)
   !-----------------------------------------------------------------------
   !
   !     This subroutine writes on output several quantities
@@ -19,7 +19,7 @@ SUBROUTINE punch_plot (filplot, plot_num, sample_bias, z, dz, &
   !     The output quantity is written (formatted) on file filplot.
   !
   USE kinds,            ONLY : DP
-  USE constants,        ONLY : rytoev
+  USE constants,        ONLY : rytoev, BOHR_RADIUS_SI
   USE cell_base,        ONLY : at, bg, omega, alat, celldm, ibrav
   USE ions_base,        ONLY : nat, ntyp => nsp, ityp, tau, zv, atm
   USE run_info,         ONLY : title
@@ -31,7 +31,7 @@ SUBROUTINE punch_plot (filplot, plot_num, sample_bias, z, dz, &
   USE gvecs,            ONLY : dual
   USE klist,            ONLY : nks, nkstot, xk
   USE lsda_mod,         ONLY : nspin, lsda
-  USE ener,             ONLY : ehart
+  USE ener,             ONLY : ehart, ef
   USE io_global,        ONLY : stdout, ionode
   USE scf,              ONLY : rho, vltot, v
   USE wvfct,            ONLY : nbnd, wg
@@ -44,9 +44,11 @@ SUBROUTINE punch_plot (filplot, plot_num, sample_bias, z, dz, &
   INTEGER, INTENT(IN) :: plot_num, kpoint, kband, spin_component
   LOGICAL, INTENT(IN) :: lsign
   REAL(DP), INTENT(IN) :: sample_bias, z, dz, &
-      emin, emax
-  REAL(DP) :: dummy, charge
+      emin, emax, electron_temperature
+  REAL(DP) :: dummy, charge, d_e, dfdd, ex
+  REAL(DP), ALLOCATABLE :: ldos(:)
   INTEGER :: is, ipol, istates
+  !
 #if defined(__MPI)
   ! auxiliary vector (parallel case)
   REAL(DP), ALLOCATABLE :: raux1 (:)
@@ -72,7 +74,7 @@ SUBROUTINE punch_plot (filplot, plot_num, sample_bias, z, dz, &
                                                           spin_component
   !
   ALLOCATE (raux(dfftp%nnr))
-  !IF
+  !
   !     Here we decide which quantity to plot
   !
   IF (plot_num == 0) THEN
@@ -278,33 +280,75 @@ SUBROUTINE punch_plot (filplot, plot_num, sample_bias, z, dz, &
      !
      !      plot of the kinetic energy density
      !
-     IF (noncolin) THEN
-        CALL dcopy (dfftp%nnr, rho%kin_r, 1, raux, 1)
+    IF (noncolin) THEN
+      CALL dcopy (dfftp%nnr, rho%kin_r, 1, raux, 1)
      ELSE
-        IF (spin_component == 0) THEN
-           CALL dcopy (dfftp%nnr, rho%kin_r (1, 1), 1, raux, 1)
-           DO is = 2, nspin
-              CALL daxpy (dfftp%nnr, 1.d0, rho%kin_r (1, is), 1, raux, 1)
-           ENDDO
-        ELSE
-           CALL dcopy (dfftp%nnr, rho%kin_r (1, spin_component), 1, raux, 1)
-           CALL dscal (dfftp%nnr, 0.5d0 * nspin, raux, 1)
-        ENDIF
-     ENDIF
+      IF (spin_component == 0) THEN
+        CALL dcopy (dfftp%nnr, rho%kin_r (1, 1), 1, raux, 1)
+        DO is = 2, nspin
+          CALL daxpy (dfftp%nnr, 1.d0, rho%kin_r (1, is), 1, raux, 1)
+        ENDDO
+      ELSE
+        CALL dcopy (dfftp%nnr, rho%kin_r (1, spin_component), 1, raux, 1)
+        CALL dscal (dfftp%nnr, 0.5d0 * nspin, raux, 1)
+      ENDIF
+    ENDIF
 
+  ELSEIF (plot_num == 23) THEN
+    !
+    ! Fermi Softness is a useful tool for analyzing the 
+    !
+    IF (noncolin) CALL errore('punch_plot','not implemented yet',1)
+    WRITE (title, '("Fermi Energy = ",f8.4," eV, ", "Electron Temperature = ",f8.4," eV")') &
+            ef * rytoev, electron_temperature * rytoev
+    ALLOCATE (ldos(dfftp%nnr))
+    !
+    ! ... cutoff value is set to 10.0, that is, when ((energy - ef)/kT) >= 10, the contribution will not be calculated
+    !
+    ex = - 10 * electron_temperature
+    istates = CEILING(-2 * ex / (0.02d0 / rytoev))
+    !
+    WRITE(stdout, '(/5x,"------------------------------------------------------------------------")')
+    WRITE(stdout, '(5x,"|      Special note: the unit of the output data is keV^-1*\AA^-3      |")')
+    WRITE(stdout, '(5x,"------------------------------------------------------------------------"/)')
+    !
+    WRITE (stdout, '(/5x, "Total ", i3," levels will be calculated"/)') istates
+    !
+    raux(:) = 0.d0
+
+    DO is = 1, istates
+      WRITE (stdout, '(6x, "Calculating energy = ",f8.4," eV, ", "broadening = ",f8.4," eV")') &
+              (ex + ef) * rytoev, emax * rytoev
+        !
+        CALL local_dos(1, lsign, kpoint, kband, spin_component, ex+ef, emax, ldos)
+        ! calculating the first derivative of Fermi-Dirac Distribution function
+        d_e = ex / electron_temperature
+        dfdd = 1.0d0 / (2.0d0 + exp (- d_e) + exp (+ d_e))
+        ! add the result to auxiliary array
+        raux(:) = raux(:) + ldos(:) * dfdd
+        !
+        ex = ex + (0.02d0 / rytoev)
+        !
+    END DO
+
+    DEALLOCATE (ldos)
+    ! ... do some unit conversion
+    raux(:) = raux(:) * (0.02d0 / rytoev) / electron_temperature / (BOHR_RADIUS_SI ** 3.0d0 * 10.0d0 ** 30.0d0) / rytoev * 1000.0d0
+  
   ELSE
-
-     CALL infomsg ('punch_plot', 'plot_num not implemented')
+    CALL infomsg ('punch_plot', 'plot_num not implemented')
 
   ENDIF
 
 #if defined(__MPI)
+
   IF (.not. (plot_num == 5 ) ) CALL gather_grid (dfftp, raux, raux1)
   IF ( ionode ) &
      CALL plot_io (filplot, title,  dfftp%nr1x,  dfftp%nr2x,  dfftp%nr3x, &
          dfftp%nr1,  dfftp%nr2,  dfftp%nr3, nat, ntyp, ibrav, celldm, at, &
          gcutm, dual, ecutwfc, plot_num, atm, ityp, zv, tau, raux1, + 1)
   DEALLOCATE (raux1)
+  
 #else
 
   CALL plot_io (filplot, title,  dfftp%nr1x,  dfftp%nr2x,  dfftp%nr3x,  &

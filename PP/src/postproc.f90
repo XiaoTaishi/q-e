@@ -54,7 +54,7 @@ SUBROUTINE extract (plot_files,plot_num)
 
   REAL(DP) :: emin, emax, sample_bias, z, dz
   
-  REAL(DP) :: degauss_ldos, delta_e
+  REAL(DP) :: degauss_ldos, delta_e, electron_temperature
   CHARACTER(len=256) :: filplot
   INTEGER :: plot_nkpt, plot_nbnd, plot_nspin, nplots
   INTEGER :: iplot, ikpt, ibnd, ispin
@@ -64,7 +64,7 @@ SUBROUTINE extract (plot_files,plot_num)
 
   NAMELIST / inputpp / outdir, prefix, plot_num, sample_bias, &
       spin_component, z, dz, emin, emax, delta_e, degauss_ldos, kpoint, kband, &
-      filplot, lsign
+      filplot, lsign, electron_temperature
   !
   !   set default values for variables in namelist
   !
@@ -84,6 +84,7 @@ SUBROUTINE extract (plot_files,plot_num)
   emax = +999.0d0
   delta_e=0.1d0
   degauss_ldos=-999.0d0
+  electron_temperature=0.1
   !
   ios = 0
   !
@@ -118,6 +119,7 @@ SUBROUTINE extract (plot_files,plot_num)
   CALL mp_bcast( kpoint, ionode_id, intra_image_comm )
   CALL mp_bcast( filplot, ionode_id, intra_image_comm )
   CALL mp_bcast( lsign, ionode_id, intra_image_comm )
+  CALL mp_bcast( electron_temperature, ionode_id, intra_image_comm )
   !
   ! no task specified: do nothing and return
   !
@@ -126,56 +128,64 @@ SUBROUTINE extract (plot_files,plot_num)
      RETURN
   ENDIF
   !
-  IF (plot_num < 0 .or. plot_num > 22) CALL errore ('postproc', &
-          'Wrong plot_num', abs (plot_num) )
+  IF (plot_num < 0 .or. plot_num > 24) CALL errore ('postproc', &
+        'Wrong plot_num', abs (plot_num) )
 
   IF (plot_num == 7 .or. plot_num == 13 .or. plot_num==18) THEN
-     IF  (spin_component(1) < 0 .or. spin_component(1) > 3) CALL errore &
-          ('postproc', 'wrong spin_component', 1)
+    IF  (spin_component(1) < 0 .or. spin_component(1) > 3) CALL errore &
+        ('postproc', 'wrong spin_component', 1)
   ELSEIF (plot_num == 10) THEN
-     IF  (spin_component(1) < 0 .or. spin_component(1) > 2) CALL errore &
-          ('postproc', 'wrong spin_component', 2)
+    IF  (spin_component(1) < 0 .or. spin_component(1) > 2) CALL errore &
+        ('postproc', 'wrong spin_component', 2)
   ELSE
      IF (spin_component(1) < 0 ) CALL errore &
-         ('postproc', 'wrong spin_component', 3)
+      ('postproc', 'wrong spin_component', 3)
   ENDIF
   !
   !   Now allocate space for pwscf variables, read and check them.
   !
   needwf=(plot_num==3).or.(plot_num==4).or.(plot_num==5).or.(plot_num==7).or. &
-         (plot_num==8).or.(plot_num==10)
+         (plot_num==8).or.(plot_num==10).or.(plot_num==23)
   IF ( needwf ) THEN
-     CALL read_file ( )
-     CALL openfil_pp ( )
+    CALL read_file ( )
+    CALL openfil_pp ( )
   ELSE
-     CALL read_xml_file ( dummy )
+    CALL read_xml_file ( dummy )
   END IF
   !
   IF ( ( two_fermi_energies .or. i_cons /= 0) .and. &
-       ( plot_num==3 .or. plot_num==4 .or. plot_num==5 ) ) &
-     CALL errore('postproc',&
-     'Post-processing with constrained magnetization is not available yet',1)
+       ( plot_num==3 .or. plot_num==4 .or. plot_num==5 .or. plot_num==23 ) ) &
+    CALL errore('postproc',&
+    'Post-processing with constrained magnetization is not available yet',1)
   !
   ! Set default values for emin, emax, degauss_ldos
   ! Done here because ef, degauss must be read from file
   IF (emin > emax) CALL errore('postproc','emin > emax',0)
   IF (plot_num == 10) THEN
-      IF (emax == +999.0d0) emax = ef * rytoev
+    IF (emax == +999.0d0) emax = ef * rytoev
   ELSEIF (plot_num == 3) THEN
-      IF (emin == -999.0d0) emin = ef * rytoev
-      IF (emax == +999.0d0) emax = ef * rytoev
-      IF (degauss_ldos == -999.0d0) THEN
-          WRITE(stdout, &
-              '(/5x,"degauss_ldos not set, defaults to degauss = ",f6.4, " eV")') &
-             degauss * rytoev
-          degauss_ldos = degauss * rytoev
-      ENDIF
+    IF (emin == -999.0d0) emin = ef * rytoev
+    IF (emax == +999.0d0) emax = ef * rytoev
+    IF (degauss_ldos == -999.0d0) THEN
+        WRITE(stdout, &
+            '(/5x,"degauss_ldos not set, defaults to degauss = ",f6.4, " eV")') &
+            degauss * rytoev
+        degauss_ldos = degauss * rytoev
+    ENDIF
+  ELSEIF (plot_num == 23) THEN
+    IF (degauss_ldos == -999.0d0) THEN
+      WRITE(stdout, &
+          '(/5x,"degauss_ldos not set, defaults to degauss = ",f6.4, " eV")') &
+          degauss * rytoev
+      degauss_ldos = degauss * rytoev
+    ENDIF
   ENDIF
   ! transforming all back to Ry units
   emin = emin / rytoev
   emax = emax / rytoev
   delta_e = delta_e / rytoev
   degauss_ldos = degauss_ldos / rytoev
+  electron_temperature = electron_temperature / rytoev
 
   ! Number of output files depends on input
   nplots = 1
@@ -188,7 +198,7 @@ SUBROUTINE extract (plot_files,plot_num)
       plot_nbnd = kband(2) - kband(1) + 1
       IF (spin_component(2) == 0)  spin_component(2) = spin_component(1)
       plot_nspin = spin_component(2) - spin_component(1) + 1
-
+      !
       nplots = plot_nbnd * plot_nkpt * plot_nspin
   ENDIF
   ALLOCATE( plot_files(nplots) )
@@ -202,7 +212,7 @@ SUBROUTINE extract (plot_files,plot_num)
     DO iplot=1,nplots
       WRITE(plot_files(iplot),'(A, I0.3)') TRIM(filplot), iplot
       CALL punch_plot (TRIM(plot_files(iplot)), plot_num, sample_bias, z, dz, &
-        emin, degauss_ldos, kpoint, kband, spin_component, lsign)
+        emin, degauss_ldos, kpoint, kband, spin_component, lsign, electron_temperature)
       emin=emin+delta_e
     ENDDO
   ELSEIF (nplots > 1 .AND. plot_num == 7) THEN
@@ -214,7 +224,7 @@ SUBROUTINE extract (plot_files,plot_num)
           WRITE(plot_files(iplot),"(A,A,I0.3,A,I0.3,A)") &
             TRIM(filplot), "_K", ikpt, "_B", ibnd, TRIM(spin_desc(ispin))
           CALL punch_plot (TRIM(plot_files(iplot)), plot_num, sample_bias, z, dz, &
-            emin, emax, ikpt, ibnd, ispin, lsign)
+            emin, emax, ikpt, ibnd, ispin, lsign, electron_temperature)
           iplot = iplot + 1
         ENDDO
       ENDDO
@@ -222,12 +232,12 @@ SUBROUTINE extract (plot_files,plot_num)
 
   ELSE
   ! Single call to punch_plot
-    IF (plot_num == 3) THEN
+    IF (plot_num == 3 .or. plot_num == 23) THEN
        CALL punch_plot (filplot, plot_num, sample_bias, z, dz, &
-           emin, degauss_ldos, kpoint, kband, spin_component, lsign)
+           emin, degauss_ldos, kpoint, kband, spin_component, lsign, electron_temperature)
      ELSE
        CALL punch_plot (filplot, plot_num, sample_bias, z, dz, &
-          emin, emax, kpoint, kband, spin_component, lsign)
+          emin, emax, kpoint, kband, spin_component, lsign, electron_temperature)
      ENDIF
 
   ENDIF
