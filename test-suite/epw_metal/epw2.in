@@ -12,6 +12,8 @@
   epwwrite    = .true.
   epwread     = .false.
 
+  vme         = .false. 
+
   nbndsub     =  4
   nbndskip    =  5
 
@@ -43,11 +45,11 @@
   lifc        = .true.
   asr_typ     = 'crystal'
 
-
   fsthick     = 6 ! eV
   eptemp      = 300 ! K
   degaussw    = 0.1  ! eV
   degaussq    = 0.05 ! meV
+  assume_metal = .TRUE.
 
   dvscf_dir   = './save'
 

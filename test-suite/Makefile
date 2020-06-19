@@ -24,6 +24,7 @@ default :
 	@echo ' run-custom-test testdir=DIR : run test in DIR only (serial)'
 	@echo ' run-custom-test-parallel testdir=DIR : run test in DIR only (parallel 4 MPI)'
 	@echo ' compare                     : compare last output with reference'
+	@echo ' pseudo                      : download needed PPs into ESPRESSO_PSEUDO'
 	@echo ' clean                       : clean stdout/sderr of all tests'
 	@echo ' '
 	@echo 'For additional advanced commands and settings please manually inspect'
@@ -36,12 +37,15 @@ pseudo :
 	@./check_pseudo.sh pw_
 	@./check_pseudo.sh cp_
 	@./check_pseudo.sh epw_
+	@./check_pseudo.sh tddfpt_
+	@./check_pseudo.sh hp_
+	@./check_pseudo.sh ph_
 
 run-tests : run-tests-serial
 
 run-tests-serial : run-tests-pw-serial run-tests-cp-serial 
 
-run-tests-parallel : run-tests-pw-parallel run-tests-cp-parallel run-tests-ph-parallel run-tests-epw-parallel
+run-tests-parallel : run-tests-pw-parallel run-tests-cp-parallel run-tests-ph-parallel run-tests-epw-parallel run-tests-hp-parallel
 
 
 run-tests-cp-serial : prolog pseudo
@@ -69,6 +73,12 @@ run-tests-epw-serial : prolog pseudo
 
 run-tests-epw-parallel : prolog pseudo
 	env QE_USE_MPI=1 ${TESTCODE_DIR}/bin/testcode.py --verbose --category=epw_all
+
+run-tests-hp-serial : prolog pseudo
+	env QE_USE_MPI=0 ${TESTCODE_DIR}/bin/testcode.py --verbose --category=hp_all
+
+run-tests-hp-parallel : prolog pseudo
+	env QE_USE_MPI=1 ${TESTCODE_DIR}/bin/testcode.py --verbose --category=hp_all
 
 run-travis : clean prolog pseudo
 	env QE_USE_MPI=0 ${TESTCODE_DIR}/bin/testcode.py --verbose --category=epw_base
@@ -121,16 +131,19 @@ clean:
 	@for x in `find pw_* -name "test*"`; do rm -rf $$x; done
 	@for x in `find ph_* -name "test*"`; do rm -rf $$x; done
 	@for x in `find cp_* -name "test*"`; do rm -rf $$x; done
+	@for x in `find hp_* -name "test*"`; do rm -rf $$x; done
 	@for x in `find epw_* -name "test*"`; do rm -rf $$x; done
 # error files
 	@for x in `find pw_* -name "CRASH"`; do rm -rf $$x; done
 	@for x in `find ph_* -name "CRASH*"`; do rm -rf $$x; done
 	@for x in `find cp_* -name "CRASH"`; do rm -rf $$x; done
+	@for x in `find hp_* -name "CRASH"`; do rm -rf $$x; done
 	@for x in `find epw_* -name "CRASH"`; do rm -rf $$x; done
 # pwscf data files
 	@rm -rf pw_*/pwscf.* ph_*/pwscf.* epw_*/pwscf.*
 # cp data files
-	@rm -rf cp_si/si_*.* co_o2/o2_*.* cp_h2o/h2o_*.* cp_sio2/sio2_*.*
+	@rm -rf cp_si/si_*.* cp_o2/o2_*.* cp_h2o/h2o_*.* cp_sio2/sio2_*.*
+	@rm -rf cp_si/si.??? cp_o2/o2.??? cp_h2o/h2o.??? cp_sio2/sio2.???
 # Special case for 'pw_vc-relax' test-case
 	@rm -f pw_vc-relax/ave pw_vc-relax/e pw_vc-relax/tv pw_vc-relax/p pw_vc-relax/eal pw_vc-relax/avec
 # Special case for 'noexe_langevin' test-case
@@ -141,6 +154,10 @@ clean:
 	@rm -rf ph_*/_ph0 ph_*/*.save ph_*/*.xml ph_*/a2F.* ph_*/*.dyn? ph_*/alpha2F.dat \
 		ph_*/dyna2F ph_*/elph.gamma* ph_*/gam.lines ph_*/lambda ph_*/lambda.dat \
 		ph_*/elph_dir ph_*/Al444.* ph_*/matdyn.modes ph_*/phonon.dos
+	@rm -rf ph_metal/aluminum.* ph_base/carbon.* ph_base/nickel.* ph_base/nickelpaw.* ph_base/silicon.* \
+	        ph_U_metal_us/iron.* ph_U_insulator_us/bn.* ph_U_metal_paw/nickel.* ph_U_insulator_paw/bn.*
+# Cleaning HP final files
+	@rm -rf hp_*/HP hp_*/*hub* hp_*/*.xml hp_*/*.wfc* hp_*/*.save hp_*/*Hubbard_parameters*
 # Cleaning EPW final files
 	@rm -rf epw_*/_ph0 epw_*/*.save epw_*/*.wfc* epw_*/*.dyn* \
 		epw_*/*.qdos_25.00 epw_*/*.P epw_*/*.freq epw_*/*.wout \
@@ -161,14 +178,13 @@ clean:
                 epw_*/*.imag_aniso* epw_*/*.imag_iso* epw_*/*.pade_* epw_*/*qdos_* \
                 epw_*/epsilon2_indabs.dat epw_*/epsilon2_indabs_lorenz.dat \
                 epw_mob_ibte_sym/save epw_*/*.bvec epw_*/*.fc epw_*/*.xml epw_*/*.labelinfo.dat \
-                epw_mob_ibte/save epw_mob/save
+                epw_mob_ibte/save epw_mob/save epw_*/Fepmatkq1 epw_*/Fepmatkqcb1 epw_*/Fsparse \
+                epw_*/Fsparsecb epw_*/inv_taucb_tmp epw_*/inv_tau_tmp epw_mob_polar/save
                 
 # Special cases for EPW
-	@rm -rf epw_base/save epw_super/save
+	@rm -rf epw_base/save epw_super/save epw_pl/save/ epw_polar/save/ \
+             trev/save epw_trev_uspp/save
 
-# Special case EPW
-	@rm -rf epw_trev/save	
-	@rm -rf epw_trev_uspp/save	
 	@rm -f userconfig
 
 # Calling 'purge' means remove all reference outputs... be careful!

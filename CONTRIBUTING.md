@@ -3,8 +3,8 @@ You can contribute to this project in many ways:
 
 * [contributing new features or improving existing ones;](#development)
 * [subscribing and partecipating to the users mailing list;](https://lists.quantum-espresso.org/mailman/listinfo/users)
-* [reporting bugs and proposing changes in the Issue section of the gitlab repository;](#creating-issues)
-* [preparing new tests for the test suite](#adding tests)
+* [reporting bugs and proposing changes in the Issue section of the gitlab repository;](https://gitlab.com/QEF/q-e/blob/develop/CONTRIBUTING.md#creating-issues)
+* [preparing new tests for the test suite](https://gitlab.com/QEF/q-e/wikis/Quantum-Espresso-test-suite)
 
 ## Development
 If you want to contribute serious and non-trivial stuff ( or even simple and trivial  stuff ) you just have  to *fork* this repository; keep it updated;
@@ -23,6 +23,7 @@ A basic guide on how to work with `git` can be found [here](https://docs.gitlab.
    - [create a local copy of __your__ repository on your workstation(s)](https://docs.gitlab.com/ce/gitlab-basics/command-line-commands.html#clone-your-project);
    - [once your contribution is ready push it into __your__ repository](https://docs.gitlab.com/ce/gitlab-basics/start-using-git.html#send-changes-to-gitlab-com);
    - [create a  merge request to the `develop` branch of QEF/q-e](https://docs.gitlab.com/ce/gitlab-basics/add-merge-request.html#how-to-create-a-merge-request)
+   - for more details and suggestions you can have a look to the wiki pages 
 
 
 ## Development tools

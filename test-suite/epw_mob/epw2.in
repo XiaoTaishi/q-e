@@ -25,13 +25,14 @@
   tempsmax    = 500
 
   restart    = .true.
-  restart_freq = 1000
+  restart_step = 1000
   selecqread = .false.
 
   lifc        = .true.
   asr_typ     = 'crystal'
 
   etf_mem     = 1
+  vme         = .false.
 
   nbndsub     =  16
   nbndskip    =  0
