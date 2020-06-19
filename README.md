@@ -1,61 +1,45 @@
-![q-e-logo](logo.jpg)
+# Quantum Espresso for Fermi softness
 
-> This is the distribution of the Quantum ESPRESSO suite of codes (ESPRESSO:
-> opEn-Source Package for Research in Electronic Structure, Simulation, and
-> Optimization).
+This package is modified based on QE and implements Fermi softness calculation.
 
-[![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+## What is Fermi softness (FS)?
 
-## USAGE
+Fermi softness is a property to accurately quantify chemical reactivity of solid surfaces developed by Prof. Lin Zhuang (Wuhan University). For more information, please refer to [Angew. Chem. Int. Ed. 2016, 55, 6239-6243](https://doi.org/10.1002/anie.201601824).
 
-Quick installation instructions for the impatient:
+## HOW TO USE
 
+General procedure can be found on [./PP/examples/FermiSoftness_example/fermi_softness.sh](https://github.com/idocx/q-e/tree/master/PP/examples/FermiSoftness_example/fermi_softness.sh). You must get the wavefunction files before calculating Fermi softness (`OPT -> SCF -> NSCF -> FS`).
+
+For more info, you can refer to the original repo (https://github.com/QEF/q-e).
+
+## Options
+
+The input file for Fermi softness has following format. (example: [./PP/examples/FermiSoftness_example/HfN_111.fs.in](https://github.com/idocx/q-e/tree/master/PP/examples/FermiSoftness_example/HfN_111.fs.in))
+
+```Fortran
+&INPUTPP
+	prefix = "*prefix of files saved by program pw.x*"
+	outdir = "*directory containing the input data, i.e. the same as in pw.x*"
+	filplot = "*file 'filplot' contains the quantity selected by plot_num*"
+	plot_num = 23  ! this flag represents option of calculating Fermi softness
+/
+
+&PLOT
+	iflag = 3  ! 3D plot
+	fileout = "*Output file's name*"
+	output_format = 6  ! cube file
+/
 ```
-./configure [options]
-make all
+
+You should submit the task with `pp.x` submodule.
+```Shell
+pp.x -i xxx.fs.in > xxx.fs.out
 ```
 
-("make" alone prints a list of acceptable targets). Binaries go in bin/.
-For more information, see the general documentation in directory Doc/,
-package-specific documentation in \*/Doc/, and the web site
-http://www.quantum-espresso.org/
+## Visualization
 
-## PACKAGES
+You can project the Fermi softness value to a charge isosurface using [VMD](https://www.ks.uiuc.edu/Research/vmd/).
 
-- PWscf: structural optimisation and molecular dynamics on the electronic ground state, with self-consistent solution of DFT equations;
-- CP: Car-Parrinello molecular dynamics;
-- PHonon: vibrational and dielectric properties from Density-Functional Perturbation Theory;
-- TD-DFPT: spectra from Time-dependent Density-Functional Perturbation Theory;
-- EPW: calculation of electron-phonon coefficients in metals;
-- PWneb: reaction pathways and transition states with the Nudged Elastic Band method;
-- GWL: many-body perturbation theory in the GW approach using ultra-localised Wannier functions and Lanczos chains.
+## Alternative source
 
-## Modular libraries
-The following libraries have been isolated and partially encapsulated in view of their release for usage in other codes as well:
-
-- UtilXlib: performing basic MPI handling, error handling, timing handling.
-- FFTXlib: parallel (MPI and OpenMP) distributed three-dimensional FFTs, performing also load-balanced distribution of data (plane waves, G-vectors and real-space grids) across processors.
-- LAXlib: parallel distributed dense-matrix diagonalization, using ELPA, SCALapack, or a custom algorithm.
-- KS Solver: parallel iterative diagonalization for the Kohn-Sham Hamiltonian (represented as an operator),using block Davidson and band-by-band or block Conjugate-Gradient algorithms.
-- LRlib: performs a variety of tasks connected with (time-dependent) DFPT, to be used also in connection with Many-Body Perturbation Theory.
-
-## Contributing
-Before contributing please read the [Contribution Guidelines](CONTRIBUTING.MD).
-
-
-
-## LICENSE
-
-All the material included in this distribution is free software;
-you can redistribute it and/or modify it under the terms of the GNU
-General Public License as published by the Free Software Foundation;
-either version 2 of the License, or (at your option) any later version.
-
-These programs are distributed in the hope that they will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-for more details.
-
-You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-675 Mass Ave, Cambridge, MA 02139, USA.
+If you find it too slow to clone this repo from Github, you can also download it from [a mirror server](https://yuxingfei.com/src/qe.tar.gz).

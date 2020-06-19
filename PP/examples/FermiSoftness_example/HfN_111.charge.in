@@ -1,0 +1,12 @@
+&INPUTPP
+	prefix = "HfN_111"
+	outdir = "./tmp"
+	filplot = "charge"
+	plot_num = 0
+/
+
+&PLOT
+	iflag = 3
+	fileout = "HfN_111.charge.box.cube"
+	output_format = 6
+/

@@ -1,0 +1,12 @@
+&INPUTPP
+	prefix = "HfN_111"
+	outdir = "./tmp"
+	filplot = "fermi_softness"
+	plot_num = 23
+/
+
+&PLOT
+	iflag = 3
+	fileout = "HfN_111.fs.box.cube"
+	output_format = 6
+/
