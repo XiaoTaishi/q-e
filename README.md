@@ -45,7 +45,7 @@ You should submit the task with `pp.x` submodule.
 pp.x -i xxx.fs.in > xxx.fs.out
 ```
 
-You should expect the output gird file with the name of `$fileout`.
+You can find a gird file with the name of `$fileout` after calculation.
 
 ## Visualization
 
