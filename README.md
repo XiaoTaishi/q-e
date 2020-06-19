@@ -49,7 +49,7 @@ You can find a gird file with the name of `$fileout` after calculation.
 
 ## Visualization
 
-You can project the Fermi softness value to a charge isosurface using [VMD](https://www.ks.uiuc.edu/Research/vmd/).
+You can project the Fermi softness value to a given surface using [VMD](https://www.ks.uiuc.edu/Research/vmd/).
 
 ## Alternative source
 
