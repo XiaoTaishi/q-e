@@ -8,6 +8,15 @@ Fermi softness is a property to accurately quantify chemical reactivity of solid
 
 ## HOW TO USE
 
+### Install
+
+```Shell
+./configure
+make all
+```
+
+### Submit task
+
 General procedure can be found on [./PP/examples/FermiSoftness_example/fermi_softness.sh](https://github.com/idocx/q-e/tree/master/PP/examples/FermiSoftness_example/fermi_softness.sh). You must get the wavefunction files before calculating Fermi softness (`OPT -> SCF -> NSCF -> FS`).
 
 For more info, you can refer to the original repo (https://github.com/QEF/q-e).
