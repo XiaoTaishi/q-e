@@ -36,6 +36,8 @@ You should submit the task with `pp.x` submodule.
 pp.x -i xxx.fs.in > xxx.fs.out
 ```
 
+You should expect the output gird file with the name of `$fileout`.
+
 ## Visualization
 
 You can project the Fermi softness value to a charge isosurface using [VMD](https://www.ks.uiuc.edu/Research/vmd/).
